@@ -1,0 +1,57 @@
+# Dockerfile.build - Builds ORE from source and produces the binary tarball
+# needed by the main Dockerfile to run the COREx benchmark.
+#
+# Usage:
+#   docker build -f Dockerfile.build -t corex-builder .
+#   docker run --rm -v $(pwd):/output corex-builder
+#
+# This will produce corex-bin-8-linux-x86_64.tar.gz in the current directory.
+# The build layers (Boost + ORE compilation) are cached by Docker after the
+# first run - subsequent builds are near-instant.
+
+FROM ubuntu:22.04
+
+RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker && \
+    echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf.d/00-docker && \
+    DEBIAN_FRONTEND=noninteractive apt-get update && \
+    apt-get install -y \
+        build-essential g++ python3-dev autotools-dev \
+        libicu-dev libbz2-dev cmake git wget ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Build Boost 1.81.0
+# Cached after first build - re-runs only if this RUN command changes
+RUN mkdir -p boost/root && \
+    cd boost && \
+    wget -q https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz && \
+    tar -xf boost_1_81_0.tar.gz && \
+    cd boost_1_81_0 && \
+    ./bootstrap.sh --prefix=/build/boost/root && \
+    ./b2 install && \
+    rm -rf /build/boost/boost_1_81_0 /build/boost/boost_1_81_0.tar.gz
+
+# Clone and build ORE at v1.8.8.0
+# Cached after first build - re-runs only if this RUN command changes
+RUN git clone --recurse-submodules https://github.com/hmxlabs/corex-bin.git && \
+    cd corex-bin && \
+    git checkout tags/v1.8.8.0 && \
+    cmake -DBOOST_ROOT=/build/boost/root -DBOOST_LIBRARYDIR=/build/boost/root/lib && \
+    make -j$(nproc)
+
+# Package binaries into the tarball (mirrors package-ore.sh)
+RUN mkdir -p /build/bin && \
+    cp /build/corex-bin/App/ore /build/bin/ && \
+    cp /build/corex-bin/OREAnalytics/orea/libOREAnalytics.so /build/bin/ && \
+    cp /build/corex-bin/QuantExt/qle/libQuantExt.so /build/bin/ && \
+    cp /build/corex-bin/OREData/ored/libOREData.so /build/bin/ && \
+    cp /build/corex-bin/QuantLib/ql/libQuantLib.so /build/bin/ && \
+    cp /build/corex-bin/QuantLib/ql/libQuantLib.so.1 /build/bin/ && \
+    cp /build/corex-bin/license.txt /build/bin/ore-license.txt && \
+    cp /build/boost/root/lib/* /build/bin/ && \
+    cd /build/bin && \
+    tar -czf /build/corex-bin-8-linux-x86_64.tar.gz .
+
+# At runtime: copy the tarball to the mounted /output directory
+ENTRYPOINT ["cp", "/build/corex-bin-8-linux-x86_64.tar.gz", "/output/corex-bin-8-linux-x86_64.tar.gz"]
