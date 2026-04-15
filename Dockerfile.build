@@ -25,7 +25,7 @@ WORKDIR /build
 # Cached after first build - re-runs only if this RUN command changes
 RUN mkdir -p boost/root && \
     cd boost && \
-    wget -q https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz && \
+    wget https://archives.boost.io/release/1.81.0/source/boost_1_81_0.tar.gz && \
     tar -xf boost_1_81_0.tar.gz && \
     cd boost_1_81_0 && \
     ./bootstrap.sh --prefix=/build/boost/root && \
@@ -37,7 +37,8 @@ RUN mkdir -p boost/root && \
 RUN git clone --recurse-submodules https://github.com/hmxlabs/corex-bin.git && \
     cd corex-bin && \
     git checkout tags/v1.8.8.0 && \
-    cmake -DBOOST_ROOT=/build/boost/root -DBOOST_LIBRARYDIR=/build/boost/root/lib && \
+    cmake -DBOOST_ROOT=/build/boost/root -DBOOST_LIBRARYDIR=/build/boost/root/lib \
+          -DBUILD_TESTING=OFF && \
     make -j$(nproc)
 
 # Package binaries into the tarball (mirrors package-ore.sh)
