@@ -40,7 +40,41 @@ COREx is a python script (well two scripts) and you will require Python3 install
 
     sudo apt install python3
 
-## Running COREx
+## Building the ORE Binaries (Docker)
+
+If you do not have a pre-built ORE binary tarball, you can build one using Docker. This works on any platform (Linux, macOS, Windows) with Docker installed and requires no local compiler toolchain.
+
+    ./build-ore-docker.sh
+
+This will:
+1. Build a Docker image (`corex-builder`) that compiles Boost 1.81.0 and ORE v1.8.8.0 from source inside an Ubuntu 22.04 container
+2. Run the container and extract the resulting `corex-bin-8-linux-x86_64.tar.gz` to the current directory
+
+The first run takes approximately 30-60 minutes depending on your hardware. Subsequent runs are near-instant as Docker caches the build layers.
+
+The resulting tarball can be shared with others who wish to run the benchmark without building ORE themselves.
+
+## Building the ORE Binaries (Bare Metal Linux)
+
+On Ubuntu 22.04, the ORE binaries can also be built directly:
+
+    sudo ./install-ore.sh   # installs build dependencies
+    ./build-ore.sh          # builds Boost and ORE from source
+    ./package-ore.sh        # packages binaries into corex-bin-boost.tar.gz
+
+## Running COREx via Docker
+
+Once you have `corex-bin-8-linux-x86_64.tar.gz` (either built via `build-ore-docker.sh` or downloaded), build the benchmark inputs archive and the runner image:
+
+    ./build.sh                          # creates corex.tar.gz (encrypted inputs + scripts)
+    docker build -t corex .             # builds the runner image
+    mkdir -p output
+    docker run -v $(pwd)/output:/home/corexrunner/corex/output corex --sim-count 100
+
+Results will be written to `./output/results.json`.
+
+## Running COREx Directly (Linux only)
+
 Once the boost libraries and ORE are installed, either clone the COREx repository run the build script to create the appropriate input archive or download from the [release](https://github.com/hmxlabs/corex/releases/download/1.1/corex.tar.gz) and extract the archive.
 
 COREx can take 3 command line inputs of which only one is mandatory

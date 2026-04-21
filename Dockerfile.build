@@ -37,8 +37,12 @@ RUN mkdir -p boost/root && \
 RUN git clone --recurse-submodules https://github.com/hmxlabs/corex-bin.git && \
     cd corex-bin && \
     git checkout tags/v1.8.8.0 && \
+    # Remove test subdirectories from CMakeLists to skip building test suites
+    sed -i '/add_subdirectory("test")/d' QuantExt/CMakeLists.txt && \
+    sed -i '/add_subdirectory("test")/d' OREData/CMakeLists.txt && \
+    sed -i '/add_subdirectory("test")/d' OREAnalytics/CMakeLists.txt && \
     cmake -DBOOST_ROOT=/build/boost/root -DBOOST_LIBRARYDIR=/build/boost/root/lib \
-          -DBUILD_TESTING=OFF && \
+          -DQL_BUILD_TEST_SUITE=OFF -DQL_BUILD_BENCHMARK=OFF -DBUILD_DOC=OFF && \
     make -j$(nproc)
 
 # Package binaries into the tarball (mirrors package-ore.sh)
@@ -50,7 +54,7 @@ RUN mkdir -p /build/bin && \
     cp /build/corex-bin/QuantLib/ql/libQuantLib.so /build/bin/ && \
     cp /build/corex-bin/QuantLib/ql/libQuantLib.so.1 /build/bin/ && \
     cp /build/corex-bin/license.txt /build/bin/ore-license.txt && \
-    cp /build/boost/root/lib/* /build/bin/ && \
+    cp /build/boost/root/lib/*.so* /build/bin/ && \
     cd /build/bin && \
     tar -czf /build/corex-bin-8-linux-x86_64.tar.gz .
 
