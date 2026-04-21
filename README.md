@@ -32,7 +32,7 @@ Clearly this repository does not contain nearly enough code to even value a simp
 
 This benchmark uses [ORE Version 8](https://github.com/OpenSourceRisk/Engine/tree/v1.8.8.0). A fork of this repository used by HMx Labs can be found [here](https://github.com/hmxlabs/corex-bin).
 
-Windows binaries are available directly from the [ORE Release](https://github.com/OpenSourceRisk/Engine/releases/tag/v1.8.8.0). Linux (compiled on Ubuntu 22.04 LTS) are available from the HMx Labs website.
+Windows binaries are available directly from the [ORE Release](https://github.com/OpenSourceRisk/Engine/releases/tag/v1.8.8.0).
 
 ORE itself requires the [boost](https://www.boost.org) libraries. If you use the scripts in this repository to build ORE, it will package the boost libraries with the ORE binaries. Note this has only been tested on Ubuntu Server 22.04 LTS (x86_64 and arm64) versions. Alternatively you may follow the build instructions in the ORE documentation.
 
@@ -56,11 +56,13 @@ The resulting tarball can be shared with others who wish to run the benchmark wi
 
 ## Building the ORE Binaries (Bare Metal Linux)
 
-On Ubuntu 22.04, the ORE binaries can also be built directly:
+On Ubuntu 22.04, the ORE binaries can also be built directly without Docker:
 
-    sudo ./install-ore.sh   # installs build dependencies
-    ./build-ore.sh          # builds Boost and ORE from source
-    ./package-ore.sh        # packages binaries into corex-bin-boost.tar.gz
+    sudo ./install-ore.sh   # installs build dependencies (cmake, g++, etc.)
+    ./build-ore.sh          # builds Boost 1.81.0 and ORE v1.8.8.0 from source
+    ./package-ore.sh        # packages binaries into corex-bin-8-linux-x86_64.tar.gz
+
+Note: these scripts are Linux-only and have been tested on Ubuntu Server 22.04 LTS (x86_64 and arm64).
 
 ## Running COREx via Docker
 
@@ -81,7 +83,7 @@ COREx can take 3 command line inputs of which only one is mandatory
 
 - The location of the ORE binaries (`--ore-dir`). This is required
 - The number of simulations to run (`--sim-count`). Optional. Will default to 500
-- The location of the ORE binaries (`--force-cpu`). Optional if you wish to override the number of detected CPUs
+- Override the detected CPU count (`--force-cpu`). Optional if you wish to override the number of detected CPUs
 
 The number of simulations will determine the length of execution of the benchmark, however the score is adjusted accordingly and will be the same (ish). A longer benchmark duration will mean a lower IO/AES overhead and should result in a marginally higher score. Conversely, thermal throttling of your hardware may mean a longer run results in a lower score. A minimum value of 50 is recommended. A value of 500 will result in a run time of approximately 20 to 30 minutes.
 
